@@ -12,7 +12,7 @@ public interface BoxSet {
    * @param height the height of the rectangle to be added
    * @throws IllegalArgumentException if the width or height of the rectangle are not positive
    */
-  void add(int x,int y,int width,int height) throws IllegalArgumentException;
+  void add(int x, int y, int width, int height) throws IllegalArgumentException;
 
   /**
    * Subtract the given rectangle from this set, and make this set the result.
