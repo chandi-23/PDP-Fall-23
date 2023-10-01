@@ -1,115 +1,106 @@
 package sim;
 
-import javax.swing.plaf.synth.SynthTextAreaUI;
-import java.awt.*;
 import java.util.Map;
 import java.util.Objects;
 
-public class SimpleTable extends PoolTable{
+/**
+ * SimpleTable is a subclass of PoolTable representing a
+ *        simple pool table in the simulation.
+ * It provides methods to determine the closest side,
+ *        handle cue ball movement, and manage collision loss.
+ */
+public class SimpleTable extends PoolTable {
 
   private final int collisionLoss = 5;
 
-  public SimpleTable(int width, int height, String type, statusMessage status){
+  /**
+   * Constructs a SimpleTable with the specified width, height, table type, and status message.
+   *
+   * @param width   The width of the table.
+   * @param height  The height of the table.
+   * @param type    The type of table.
+   * @param status  The status message object to track the simulation status.
+   */
+  public SimpleTable(int width, int height, String type, StatusMessage status) {
     super(width, height, type, status);
   }
 
-
+  /**
+   * Determines the closest side of the table to the
+   *        cue ball and calculates the time to reach that side.
+   *
+   * @param cueBall The cue ball object.
+   * @return A Map.Entry representing the closest side and its corresponding time duration.
+   */
   protected Map.Entry<String, Double> getClosestSide(Ball cueBall) {
-    distances.clear();
+    duration.clear();
 
-    if (cueBall.dx > 0) {
-      distances.put("+x", Math.abs((tableWidth - cueBall.x - cueBall.radius) / (cueBall.speed * cueBall.dx)) );
-    } else {
-      distances.put("-x", Math.abs((cueBall.x - cueBall.radius) / (cueBall.speed * cueBall.dx)));
+    double dx = cueBall.dx;
+    double dy = cueBall.dy;
+    double speed = cueBall.speed;
+
+    if (dx != 0) {
+      double xDuration = Math.abs((dx > 0 ? tableWidth - cueBall.x - cueBall.radius
+              : cueBall.x - cueBall.radius) / (speed * dx));
+      duration.put((dx > 0) ? "+x" : "-x", xDuration);
     }
 
-    if (cueBall.dy > 0) {
-      distances.put("+y", Math.abs((tableWidth - cueBall.y - cueBall.radius) / (cueBall.speed * cueBall.dy)));
-    } else {
-      distances.put("-y", Math.abs((cueBall.y - cueBall.radius) / (cueBall.speed * cueBall.dy)));
+    if (dy != 0) {
+      double yDuration = Math.abs((dy > 0 ? tableHeight - cueBall.y - cueBall.radius
+              : cueBall.y - cueBall.radius) / (speed * dy));
+      duration.put((dy > 0) ? "+y" : "-y", yDuration);
     }
-    Map.Entry<String, Double> minEntry = null;
 
-    for (Map.Entry<String, Double> entry : distances.entrySet()) {
-      if (minEntry == null || entry.getValue() < minEntry.getValue()) {
-        minEntry = entry;
-      }
-    }
-    return minEntry;
+    return duration.entrySet()
+            .stream()
+            .min(Map.Entry.comparingByValue())
+            .orElse(null);
   }
 
-  @Override
+
+  /**
+   * Moves the cue ball based on the closest side and handles collisions.
+   *
+   * @param cueBall The cue ball object.
+   */
   protected void move(Ball cueBall) {
-    if (cueBall.speed > 0) {
-      Map.Entry<String, Double> closest = getClosestSide(cueBall);
+    Map.Entry<String, Double> closest = getClosestSide(cueBall);
 
-      if (closest != null) {
-        String cSide = closest.getKey();
-        double sTime = closest.getValue();
-        //System.out.println("sTime: " + sTime);
-        //System.out.println(closest.getKey());
-        if (Objects.equals(cSide, "+x")) {
-
-          cueBall.y += cueBall.speed * cueBall.dy * sTime;
-          cueBall.x = tableWidth - cueBall.radius;
-          cueBall.dx = -cueBall.dx;
-          status.currentStatus = 3;
-          //System.out.println("Hit the right edge in: " + sTime);
-          //System.out.println("x: "+ cueBall.x +" y: "+ cueBall.y + " dx:" + cueBall.dx + " dy:" + cueBall.dy );
-        }
-        else if (Objects.equals(cSide, "-x")) {
-          cueBall.y += cueBall.speed * cueBall.dy * sTime;
-          cueBall.x = cueBall.radius;
-          cueBall.dx = -cueBall.dx;
-          status.currentStatus = 2;
-//          System.out.println("Hit the left edge in: " + sTime + " " + (cueBall.speed * cueBall.dy));
-
-        }
-        else if (Objects.equals(cSide, "+y")) {
-          cueBall.x += cueBall.speed * cueBall.dx * sTime;
-          cueBall.y = tableHeight - cueBall.radius;
-          cueBall.dy = -cueBall.dy;
-          status.currentStatus = 4;
-          //System.out.println("Hit the top edge in: " + sTime);
-        }
-        else if (Objects.equals(cSide, "-y")){
-          cueBall.x += cueBall.speed * cueBall.dx * sTime;
-          cueBall.y = cueBall.radius;
-          cueBall.dy = -cueBall.dy;
-          status.currentStatus = 5;
-          //System.out.println("Hit the bottom edge in:  " +sTime + " " + (cueBall.speed * cueBall.dy));
-        }
-
-        cueBall.speed -= collisionLoss;
-        if (cueBall.speed <=0){
-          cueBall.vx = 0;//(cueBall.dx/ Math.sqrt(cueBall.dx*cueBall.dx + cueBall.dy*cueBall.dy));
-          cueBall.vy = 0;
-          status.currentStatus = 6;
-        }
-        else{
-          cueBall.vx = cueBall.speed *  cueBall.dx;//(cueBall.dx/ Math.sqrt(cueBall.dx*cueBall.dx + cueBall.dy*cueBall.dy));
-          cueBall.vy = cueBall.speed *  cueBall.dy; //(cueBall.dy/ Math.sqrt(cueBall.dx*cueBall.dx + cueBall.dy*cueBall.dy));
-          System.out.println("New Speed:" + cueBall.speed);
-
-        }
-        //System.out.println(" speed:" +cueBall.speed + " vx: " +cueBall.vx + " vy: " +cueBall.vy);
-      }
-      else {
-        System.out.println("No stime left");
-        cueBall.speed = 0;
-        cueBall.vx = 0;//cueBall.speed *  cueBall.dx;//(cueBall.dx/ Math.sqrt(cueBall.dx*cueBall.dx + cueBall.dy*cueBall.dy));
-        cueBall.vy = 0;//cueBall
-        status.currentStatus = 6;
-      }
-    }
-    else{
+    if (cueBall.speed <= 0 || closest == null) {
       cueBall.speed = 0;
-      cueBall.vx = 0;//cueBall.speed *  cueBall.dx;//(cueBall.dx/ Math.sqrt(cueBall.dx*cueBall.dx + cueBall.dy*cueBall.dy));
-      cueBall.vy = 0;//cueBall
+      cueBall.vx = 0;
+      cueBall.vy = 0;
       status.currentStatus = 6;
+      return;
     }
 
+    String cSide = closest.getKey();
+    double sTime = closest.getValue();
+
+    if (Objects.equals(cSide, "+x") || Objects.equals(cSide, "-x")) {
+      cueBall.y += cueBall.speed * cueBall.dy * sTime;
+      cueBall.x = Objects.equals(cSide, "+x") ? tableWidth - cueBall.radius : cueBall.radius;
+      cueBall.dx = -cueBall.dx;
+      status.currentStatus = Objects.equals(cSide, "+x") ? 3 : 2;
+    } else {
+      cueBall.x += cueBall.speed * cueBall.dx * sTime;
+      cueBall.y = Objects.equals(cSide, "+y") ? tableHeight - cueBall.radius : cueBall.radius;
+      cueBall.dy = -cueBall.dy;
+      status.currentStatus = Objects.equals(cSide, "+y") ? 4 : 5;
+    }
+
+    cueBall.speed -= collisionLoss;
+
+    if (cueBall.speed <= 0) {
+      cueBall.vx = 0;
+      cueBall.vy = 0;
+      status.currentStatus = 6;
+    } else {
+      cueBall.vx = cueBall.speed * cueBall.dx;
+      cueBall.vy = cueBall.speed * cueBall.dy;
+    }
   }
+
 }
 
 
