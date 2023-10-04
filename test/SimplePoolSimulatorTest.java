@@ -11,6 +11,22 @@ import static org.junit.Assert.assertEquals;
  */
 public class SimplePoolSimulatorTest {
 
+  @Test
+  public void testValidSimpleTable() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 15, "simple");
+    assertEquals(10, pool.getTableWidth());
+    assertEquals(15, pool.getTableHeight());
+    assertEquals("Status: Ball not set up", pool.getStatus());
+  }
+
+  @Test
+  public void testValidFrictionTable() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 15, "friction");
+    assertEquals(10, pool.getTableWidth());
+    assertEquals(15, pool.getTableHeight());
+    assertEquals("Status: Ball not set up", pool.getStatus());
+  }
+
   @Test(expected = IllegalArgumentException.class)
   public void testInvalidWidthTable() {
     PoolSimulator pool = new SimplePoolSimulator(-10, 10, "simple");
@@ -28,7 +44,7 @@ public class SimplePoolSimulatorTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testZeroWidthTable() {
-    PoolSimulator pool = new SimplePoolSimulator(10, 0, "simple");
+    PoolSimulator pool = new SimplePoolSimulator(0, 10, "simple");
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -38,7 +54,31 @@ public class SimplePoolSimulatorTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testInvalidZeroTable() {
-    PoolSimulator pool = new SimplePoolSimulator(0, 0, "Sample");
+    PoolSimulator pool = new SimplePoolSimulator(0, 0, "Simple");
+  }
+
+  @Test
+  public void testValidBallSimpleCreation() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 10, "simple");
+    pool.start(4, 5, 1, 5, -3, -2);
+    assertEquals(4, pool.getBallPositionX(), 0.01);
+    assertEquals(5, pool.getBallPositionY(), 0.01);
+    assertEquals(1, pool.getBallRadius(), 0.01);
+    assertEquals(-4.160, pool.getBallVelocityX(), 0.01);
+    assertEquals(-2.7735, pool.getBallVelocityY(), 0.01);
+    assertEquals("Status: Simulation started", pool.getStatus());
+  }
+
+  @Test
+  public void testValidBallFrictionCreation() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 10, "friction");
+    pool.start(4, 5, 1, 5, -3, -2);
+    assertEquals(4, pool.getBallPositionX(), 0.01);
+    assertEquals(5, pool.getBallPositionY(), 0.01);
+    assertEquals(1, pool.getBallRadius(), 0.01);
+    assertEquals(-4.160, pool.getBallVelocityX(), 0.01);
+    assertEquals(-2.7735, pool.getBallVelocityY(), 0.01);
+    assertEquals("Status: Simulation started", pool.getStatus());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -66,14 +106,38 @@ public class SimplePoolSimulatorTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
+  public void testInvalidBallWithinFrictionRadiusX() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 10, "friction");
+    pool.start(4, 5, 5, 5, -3, -2);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidBallWithinFrictionRadiusY() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 10, "friction");
+    pool.start(5, 4, 5, 5, -3, -2);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidBallWithinFrictionRadius() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 10, "friction");
+    pool.start(4, 4, 5, 5, -3, -2);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
   public void testInvalidBallOutTable2() {
     PoolSimulator pool = new SimplePoolSimulator(10, 10, "simple");
     pool.start(-14, 5, 1, 5, -3, -2);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testInvalidInvalidRadiusTable() {
+  public void testInvalidZeroRadiusTable() {
     PoolSimulator pool = new SimplePoolSimulator(10, -10, "simple");
+    pool.start(4, 5, 0, 5, -3, -2);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidZeroRadiusFrictionTable() {
+    PoolSimulator pool = new SimplePoolSimulator(10, -10, "friction");
     pool.start(4, 5, 0, 5, -3, -2);
   }
 
@@ -89,9 +153,15 @@ public class SimplePoolSimulatorTest {
     pool.start(4, 5, 10, -5, -3, -2);
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidNegativeSpeedFrictionTable() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 10, "friction");
+    pool.start(4, 5, 10, -5, -3, -2);
+  }
+
 
   @Test
-  public void testStart() {
+  public void testSimpleStart() {
     PoolSimulator pool = new SimplePoolSimulator(10, 10, "simple");
 
     pool.start(4, 5, 1, 16, 1, -2);
@@ -130,6 +200,12 @@ public class SimplePoolSimulatorTest {
     assertEquals(Double.NEGATIVE_INFINITY, pool.getBallPositionX(), 0.01);
     assertEquals(Double.NEGATIVE_INFINITY, pool.getBallPositionY(), 0.01);
     assertEquals(Double.NEGATIVE_INFINITY, pool.getBallRadius(), 0.01);
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void testAdvanceWOBallXYR() {
+    PoolSimulator pool = new SimplePoolSimulator(10, 10, "friction");
+    pool.advance();
   }
 
   @Test
@@ -192,6 +268,8 @@ public class SimplePoolSimulatorTest {
       pool.advance();
     }
     assertEquals(63.69183643219577, pool.getBallPositionX(),0.01);
+    assertEquals(0, pool.getBallVelocityX(),0.01);
+    assertEquals(0, pool.getBallVelocityY(),0.01);
   }
 
   @Test
@@ -287,4 +365,5 @@ public class SimplePoolSimulatorTest {
     pool.advance();
     assertEquals("Status: Ball hit top edge", pool.getStatus());
   }
+
 }

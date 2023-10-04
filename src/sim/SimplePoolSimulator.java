@@ -49,6 +49,11 @@ public class SimplePoolSimulator implements PoolSimulator {
   @Override
   public void start(int x, int y, int radius, int speed, double dx, double dy)
           throws IllegalArgumentException {
+
+    if (table == null) {
+      throw new IllegalStateException("Create Table first");
+    }
+    
     if (radius <= 0 || speed < 0
             || radius >= Math.min(table.tableHeight, table.tableWidth)) {
       throw new IllegalArgumentException("Invalid radius/speed");

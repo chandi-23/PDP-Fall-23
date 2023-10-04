@@ -10,7 +10,7 @@ import java.util.Objects;
  */
 public class NewtonianTable extends PoolTable {
 
-  private double coefFr = 0.1; //Coefficient of friction for the table.
+  private static final double coefFr = 0.1; //Coefficient of friction for the table.
 
   /**
    * Constructs a NewtonianTable with the specified dimensions and type of table.
@@ -62,32 +62,28 @@ public class NewtonianTable extends PoolTable {
   protected Map.Entry<String, Double> getClosestSide(Ball cueBall) {
     duration.clear();
     double time;
+    double a;
+    double b;
+    double c;
 
-    if (cueBall.dx > 0) {
-      time = solveForT(-0.5 * coefFr * 9.81 * cueBall.dx,
-              cueBall.vx,
-              -(tableWidth - cueBall.x - cueBall.radius));
-      duration.put("+x", time);
-    }
-    else if (cueBall.dx < 0) {
-      time = solveForT(-0.5 * coefFr * 9.81 * cueBall.dx,
-              cueBall.vx,
-              cueBall.x - cueBall.radius);
-      duration.put("-x", time);
+    if (cueBall.dx !=  0) {
+      a = -0.5 * coefFr * 9.81 * cueBall.dx;
+      b = cueBall.vx;
+      c = (cueBall.dx > 0) ? -(tableWidth - cueBall.x - cueBall.radius)
+              : (cueBall.x - cueBall.radius);
+
+      time = solveForT(a, b , c);
+      duration.put((cueBall.dx > 0) ? "+x" : "-x", time);
     }
 
-    if (cueBall.dy > 0) {
-      time = solveForT(-0.5 * coefFr * 9.81 * cueBall.dy,
-              cueBall.vy,
-              -(tableHeight - cueBall.y - cueBall.radius));
-      duration.put("+y", time);
+    if (cueBall.dy != 0) {
+      a = -0.5 * coefFr * 9.81 * cueBall.dy;
+      b = cueBall.vy;
+      c = (cueBall.dy > 0) ? -(tableHeight - cueBall.y - cueBall.radius)
+              : (cueBall.y - cueBall.radius);
 
-    }
-    else if (cueBall.dy < 0) {
-      time = solveForT((-0.5 * coefFr * 9.81 * cueBall.dy),
-              (cueBall.vy),
-              (cueBall.y - cueBall.radius) );
-      duration.put("-y", time);
+      time = solveForT(a, b , c);
+      duration.put((cueBall.dy > 0) ? "+y" : "-y", time);
     }
 
     return duration.entrySet()
@@ -95,7 +91,6 @@ public class NewtonianTable extends PoolTable {
             .min(Map.Entry.comparingByValue())
             .orElse(null);
   }
-
 
   /**
    * Moves the cue ball based on Newtonian physics, handling collisions and updates its status.
@@ -114,37 +109,24 @@ public class NewtonianTable extends PoolTable {
     double sTime = closest.getValue();
 
     if (sTime != Double.POSITIVE_INFINITY && sTime != Double.NEGATIVE_INFINITY) {
-      if (Objects.equals(cSide, "+x")) {
+
+      if (Objects.equals(cSide, "+x") || Objects.equals(cSide, "-x") ) {
         cueBall.y += (cueBall.vy * sTime) - (0.5 * coefFr * 9.81 * cueBall.dy * sTime * sTime);
-        cueBall.x = tableWidth - cueBall.radius;
         cueBall.vx = -(cueBall.vx - ( coefFr * 9.81 * cueBall.dx * sTime));
         cueBall.vy = cueBall.vy - ( coefFr * 9.81 * cueBall.dy * sTime);
         cueBall.dx = -cueBall.dx;
-        status.currentStatus = 3;
 
-      } else if (Objects.equals(cSide, "-x")) {
-        cueBall.y += (cueBall.vy * sTime) - (0.5 * coefFr * 9.81 * cueBall.dy * sTime * sTime);
-        cueBall.x = cueBall.radius;
-        cueBall.vx = -(cueBall.vx - (coefFr * 9.81 * cueBall.dx * sTime));
-        cueBall.vy = cueBall.vy - (coefFr * 9.81 * cueBall.dy * sTime);
-        cueBall.dx = -cueBall.dx;
-        status.currentStatus = 2;
-
-      } else if (Objects.equals(cSide, "+y")) {
+        cueBall.x = Objects.equals(cSide, "+x") ? tableWidth - cueBall.radius : cueBall.radius;
+        status.currentStatus = Objects.equals(cSide, "+x") ? 3 : 2;
+      }
+      else if (Objects.equals(cSide, "+y") || Objects.equals(cSide, "-y")) {
         cueBall.x += (cueBall.vx * sTime) - (0.5 * coefFr * 9.81 * cueBall.dx * sTime * sTime);
-        cueBall.y = tableHeight - cueBall.radius;
         cueBall.vx = cueBall.vx - ( coefFr * 9.81 * cueBall.dx * sTime);
         cueBall.vy = -(cueBall.vy - ( coefFr * 9.81 * cueBall.dy * sTime));
         cueBall.dy = -cueBall.dy;
-        status.currentStatus = 4;
 
-      } else if (Objects.equals(cSide, "-y")) {
-        cueBall.x += (cueBall.vx * sTime) - (0.5 * coefFr * 9.81 * cueBall.dx * sTime * sTime);
-        cueBall.y = cueBall.radius;
-        cueBall.vx = cueBall.vx - (coefFr * 9.81 * cueBall.dx * sTime);
-        cueBall.vy = -(cueBall.vy - (coefFr * 9.81 * cueBall.dy * sTime));
-        cueBall.dy = -cueBall.dy;
-        status.currentStatus = 5;
+        cueBall.y = Objects.equals(cSide, "+y") ? tableHeight - cueBall.radius : cueBall.radius;
+        status.currentStatus = Objects.equals(cSide, "+y") ? 4 : 5;
       }
     }
 
